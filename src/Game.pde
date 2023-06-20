@@ -276,13 +276,17 @@ public class Game {
     var decision = "Do Nothing";
 
     // var firstCondition = output[0] > 0.2 && output[1] < -0.2;
-    if (output[0] < output[1] && data[0] > leftBoundary + rectangle.Width / 2) {
+    var firstCondition = output[0] < output[1];
+    // var firstCondition = output[0] < -0.666 && output[1] > 0.666;
+    if (firstCondition && data[0] > leftBoundary + rectangle.Width / 2) {
       rectangle.X -= rectangleSpeed;
       decision = "Go To Left";
     }
 
     // var secondCondition = output[0] < -0.2 && output[1] > 0.2;
-    if (output[0] > output[1] && data[0] < rightBoundary - rectangle.Width / 2) {
+    var secondCondition = output[0] > output[1];
+    // var secondCondition = output[0] > 0.666 && output[1] < -0.666;
+    if (secondCondition && data[0] < rightBoundary - rectangle.Width / 2) {
       rectangle.X += rectangleSpeed;
       decision = "Go To Right";
     }
