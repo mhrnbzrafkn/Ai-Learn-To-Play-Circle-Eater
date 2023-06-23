@@ -1,5 +1,5 @@
 // Define Circle Class
-public class Circle {
+class Circle {
   float X;
   float Y;
   int Radius;

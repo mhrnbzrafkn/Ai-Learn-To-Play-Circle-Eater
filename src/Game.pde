@@ -1,6 +1,4 @@
-// Define GameController Class
 public class Game {
-  // Define Default Properties
   NeuralNetwork neuralNetwork;
 
   Rectangle rectangle;
@@ -15,70 +13,80 @@ public class Game {
   int rectangleSpeed;
 
   Game(NeuralNetwork initialNeuralNetwork) {
+    neuralNetwork = initialNeuralNetwork;
+
     // Initial values
-    score = 50;
+    score = 20;
     greenCircleScore = 10;
-    redCircleScore = -20;
+    // redCircleScore = -20;
     circleRadius = 25;
 
     speed = 10;
     circleSpeed = speed;
-    rectangleSpeed = speed + 5;
+    rectangleSpeed = speed * 3;
 
     // Draw rectangle
     int rectWidth = 100;
     int rectHeight = 20;
-    int rectX = width / 2 - rectWidth / 2;
+    int randomX = int(random(0 + rectWidth / 2, width - rectWidth / 2));
+    int rectX = randomX;
     int rectY = height - rectHeight - 10;
     rectangle = new Rectangle(rectX, rectY, rectWidth, rectHeight, rectangleSpeed);
 
     // Initial circles list
     circles = new ArrayList<Circle>();
-
-    // Initial neural network
-    neuralNetwork = initialNeuralNetwork;
   }
 
-  int update(boolean isShowable) {
-    background(255);
+  public int Update() {
+    // background(255);
 
-    // Draw the rectangle
-    if (isShowable) rectangle.display();
-
-    // Draw all lines from the rectangle to the end of the screen
-    if (isShowable) drawAllLines();
+    // Move the rectangle
+    //if (keyPressed) {
+    //  rectangle.move(keyCode, 0, width);
+    //}
 
     // Generate circles
-    GenerateCircle();
+    if (frameCount % 50 == 0) {
+      float circleX = random(width - circleRadius * 2) + circleRadius;
+      float circleY = -circleRadius;
+      // int circleType = random(1) < 0.666 ? 1 : 0; // Randomly choose between red and green circle
+      int circleType = 0;
+      circles.add(new Circle(circleX, circleY, circleRadius, circleSpeed, circleType));
+    }
 
-    // Update and display circles
     float nearestGreenDistance = 1000;
     float[] nearestCircles = new float[5];
 
     for (int i = circles.size() - 1; i >= 0; i--) {
       Circle circle = circles.get(i);
       circle.move();
-      if (isShowable) circle.display();
 
-      // Check Collision
-      if (circle.checkCollision(rectangle)) {
-        if (circle.Type == 0) {
-          score += greenCircleScore;
-        } else {
-          score += redCircleScore;
-        }
-        circles.remove(i);
-      } else if (circle.isOffScreen()) {
-        if (circle.Type == 0) {
-          score += redCircleScore;
-        }
-        circles.remove(i);
+      int circleOnLine = checkIsCircleOnLine(rectangle.X, rectangle.Y, int(circle.X), int(circle.Y));
+
+      if (circleOnLine == 30) {
+        float distance = calculateDistance(rectangle.X, rectangle.Y, int(circle.X), int(circle.Y));
+        nearestCircles[0] = distance;
       }
 
-      // Find circles on lines
-      int circleLine = calculateCircleIsOnWhichLine(rectangle.X, rectangle.Y, int(circle.X), int(circle.Y), isShowable);
+      if (circleOnLine == 60) {
+        float distance = calculateDistance(rectangle.X, rectangle.Y, int(circle.X), int(circle.Y));
+        nearestCircles[1] = distance;
+      }
 
-      nearestCircles = updateNearestCircles(nearestCircles, circleLine, circle);
+      if (circleOnLine == 90) {
+        float distance = calculateDistance(rectangle.X, rectangle.Y, int(circle.X), int(circle.Y));
+        nearestCircles[2] = distance;
+      }
+
+      if (circleOnLine == 120) {
+        float distance = calculateDistance(rectangle.X, rectangle.Y, int(circle.X), int(circle.Y));
+        nearestCircles[3] = distance;
+      }
+
+      if (circleOnLine == 150) {
+        float distance = calculateDistance(rectangle.X, rectangle.Y, int(circle.X), int(circle.Y));
+        nearestCircles[4] = distance;
+      }
 
       if (circle.Type == 0) { // Green circle
         float distance = dist(rectangle.X + rectangle.Width / 2, rectangle.Y + rectangle.Height / 2, circle.X, circle.Y);
@@ -86,85 +94,88 @@ public class Game {
           nearestGreenDistance = distance;
         }
       }
+
+      if (circle.checkCollision(rectangle)) {
+        if (circle.Type == 0) {
+          score += greenCircleScore;
+        } else {
+          score += redCircleScore;
+          // neuralNetwork.mutate(0.1);
+        }
+        circles.remove(i);
+      } else if (circle.isOffScreen()) {
+        if (circle.Type == 0) {
+          score -= greenCircleScore;
+          // neuralNetwork.mutate(0.1);
+        }
+        circles.remove(i);
+      }
     }
 
-    fill(0);
-    textSize(20);
-    textAlign(LEFT);
-
-    // Move the rectangle
-    // moveRectangle(data);
-    double rectCenterX = rectangle.X + rectangle.Width / 2;
-    double rectCenterY = rectangle.Y + rectangle.Height / 2;
-    double nearestGreenCircle = nearestGreenDistance;
+    int rectangleCenterX = rectangle.X + rectangle.Width / 2;
     var data = new double[] {
-      rectCenterX,
-      rectCenterY,
+      rectangleCenterX,
       nearestCircles[0],
       nearestCircles[1],
       nearestCircles[2],
       nearestCircles[3],
       nearestCircles[4],
-      nearestGreenCircle
+      nearestGreenDistance
     };
-    makeDecision(neuralNetwork, data, isShowable);
-
-    // Display the score
-    if (isShowable) text("Score: " + score, 10, 20);
-
-    // Display the speed
-    if (isShowable) text("Speed: " + circleSpeed, 10, 40);
-
-    // Check if the score is less than zero and stop the game
-    //if (score < 0) {
-    //fill(0);
-    //textSize(30);
-    //textAlign(CENTER);
-    //background(255);
-    //text("Game Over!", width/2, height/2);
-    //}
+    makeDecision(neuralNetwork, data);
 
     return score;
   }
 
-  void updateNeuralNetwork(NeuralNetwork newNeuralNetwork) {
-    neuralNetwork = newNeuralNetwork;
-  }
+  public void display() {
+    if (score > 0) {
+      fill(0);
+      rectangle.display();
+      fill(255);
+      textSize(20);
+      textAlign(CENTER);
+      text(score, rectangle.X + rectangle.Width / 2, rectangle.Y + rectangle.Height);
 
-  private void drawAllLines() {
-    drawLine(30);
-    drawLine(60);
-    drawLine(90);
-    drawLine(120);
-    drawLine(150);
-  }
-
-  private void drawLine(int angle) {
-    if (angle < 90 && angle > 0) {
-      float rectCenterX = rectangle.X + rectangle.Width / 2;
-      float rectCenterY = rectangle.Y;
-      float lineAngle = radians(angle);
-      float x = width - rectCenterX;
-      float L = x / cos(lineAngle);
-      float lineEndY = L * sin(lineAngle);
-      line(rectCenterX, rectCenterY, rectCenterX + x, rectCenterY - lineEndY);
-      ellipse(rectCenterX + x, rectCenterY - lineEndY, 10, 10);
-    } else if (angle > 90 && angle < 180) {
-      float rectCenterX = rectangle.X + rectangle.Width / 2;
-      float rectCenterY = rectangle.Y;
-      float lineAngle = radians(-angle);
-      float x = rectCenterX;
-      float L = x / cos(lineAngle);
-      float lineEndY = L * sin(lineAngle);
-      line(rectCenterX, rectCenterY, 0, rectCenterY - lineEndY);
-      ellipse(0, rectCenterY - lineEndY, 10, 10);
-    } else if (angle == 90) {
-      line(rectangle.X + rectangle.Width / 2, rectangle.Y, rectangle.X + rectangle.Width / 2, 0);
-      ellipse(rectangle.X + rectangle.Width / 2, 0, 10, 10);
+      for (int i = circles.size() - 1; i >= 0; i--) {
+        Circle circle = circles.get(i);
+        circle.display();
+      }
     }
   }
 
-  private int calculateCircleIsOnWhichLine(int x0, int y0, int x, int y, boolean isShowable) {
+  private void makeDecision(NeuralNetwork neuralNetwork, double[] data) {
+    int leftBoundary = 0;
+    int rightBoundary = width;
+
+    var output = neuralNetwork.feedForward(data);
+    // var decision = "Do Nothing";
+
+    // var firstCondition = output[0] > 0.6 && output[1] < 0.4;
+    var firstCondition = output[0] < output[1];
+    // var firstCondition = output[0] < -0.666 && output[1] > 0.666;
+    // var firstCondition = output[0] < 0 && output[1] > 0;
+    // firstCondition = output[0] < 0.4;
+    if (firstCondition && data[0] > leftBoundary + rectangle.Width / 2) {
+      // rectangle.X -= rectangleSpeed;
+      var step = (output[1] - output[0]) * 100;
+      rectangle.X -= step;
+      // decision = "Go To Left";
+    }
+
+    // var secondCondition = output[0] < 0.4 && output[1] > 0.6;
+    var secondCondition = output[0] > output[1];
+    // var secondCondition = output[0] > 0.666 && output[1] < -0.666;
+    // var secondCondition = output[0] > 0 && output[1] < 0;
+    // var secondCondition = output[0] > 0.6;
+    if (secondCondition && data[0] < rightBoundary - rectangle.Width) {
+      //rectangle.X += rectangleSpeed;
+      var step = (output[0] - output[1]) * 100;
+      rectangle.X += step;
+      // decision = "Go To Right";
+    }
+  }
+
+  private int checkIsCircleOnLine(int x0, int y0, int x, int y) {
     int rectCenterY0 = height - (y0 + rectangle.Height / 2);
     int rectCenterX0 = x0 + rectangle.Width / 2;
     int convertedX = x;
@@ -175,35 +186,33 @@ public class Game {
     int targetCircleWidth = 10;
     int targetCircleHeight = 10;
 
-    float threshold = 0.2;
-
     // Find circles in angle 30
-    if (abs(0.5773 - slop) < threshold) {
-      if (isShowable) ellipse(x, y, targetCircleWidth, targetCircleHeight);
+    if (abs(0.5773 - slop) < 0.05) {
+      // ellipse(x, y, targetCircleWidth, targetCircleHeight);
       return 30;
     }
 
     // Find circles in angle 60
-    if (abs(1.7320 - slop) < threshold) {
-      if (isShowable) ellipse(x, y, targetCircleWidth, targetCircleHeight);
+    if (abs(1.7320 - slop) < 0.1) {
+      // ellipse(x, y, targetCircleWidth, targetCircleHeight);
       return 60;
     }
 
     // Find circles in angle 90
     if (abs(rectCenterX0 - convertedX) < circleRadius) {
-      if (isShowable) ellipse(x, y, targetCircleWidth, targetCircleHeight);
+      // ellipse(x, y, targetCircleWidth, targetCircleHeight);
       return 90;
     }
 
     // Find circles in angle 120
-    if (abs(-1.7320 - slop) < threshold) {
-      if (isShowable) ellipse(x, y, targetCircleWidth, targetCircleHeight);
+    if (abs(-1.7320 - slop) < 0.1) {
+      // ellipse(x, y, targetCircleWidth, targetCircleHeight);
       return 120;
     }
 
     // Find circles in angle 150
-    if (abs(-0.5773 - slop) < threshold) {
-      if (isShowable) ellipse(x, y, targetCircleWidth, targetCircleHeight);
+    if (abs(-0.5773 - slop) < 0.05) {
+      // ellipse(x, y, targetCircleWidth, targetCircleHeight);
       return 150;
     }
 
@@ -217,84 +226,5 @@ public class Game {
     int realY2 = height - (y2 + rectangle.Height / 2);
     float distance = dist(realX1, realY1, realX2, realY2);
     return distance;
-  }
-
-  private float[] updateNearestCircles(float[] nearestCircles, int circleLine, Circle circle) {
-    if (circleLine == 30) {
-      float distance = calculateDistance(rectangle.X, rectangle.Y, int(circle.X), int(circle.Y));
-      nearestCircles[0] = distance;
-      if (circle.Type == 1) nearestCircles[0] = -nearestCircles[0];
-    }
-
-    if (circleLine == 60) {
-      float distance = calculateDistance(rectangle.X, rectangle.Y, int(circle.X), int(circle.Y));
-      nearestCircles[1] = distance;
-      if (circle.Type == 1) nearestCircles[1] = -nearestCircles[1];
-    }
-
-    if (circleLine == 90) {
-      float distance = calculateDistance(rectangle.X, rectangle.Y, int(circle.X), int(circle.Y));
-      nearestCircles[2] = distance;
-      if (circle.Type == 1) nearestCircles[2] = -nearestCircles[2];
-    }
-
-    if (circleLine == 120) {
-      float distance = calculateDistance(rectangle.X, rectangle.Y, int(circle.X), int(circle.Y));
-      nearestCircles[3] = distance;
-      if (circle.Type == 1) nearestCircles[3] = -nearestCircles[3];
-    }
-
-    if (circleLine == 150) {
-      float distance = calculateDistance(rectangle.X, rectangle.Y, int(circle.X), int(circle.Y));
-      nearestCircles[4] = distance;
-      if (circle.Type == 1) nearestCircles[4] = -nearestCircles[4];
-    }
-
-    return nearestCircles;
-  }
-
-  private void GenerateCircle() {
-    if (frameCount % 30 == 0) {
-      float circleX = random(width - circleRadius * 2) + circleRadius;
-      float circleY = -circleRadius;
-      int circleType = random(1) < 0.666 ? 1 : 0; // Randomly choose between red and green circle
-      circles.add(new Circle(circleX, circleY, circleRadius, circleSpeed, circleType));
-    }
-  }
-
-  private void moveRectangle() {
-    if (keyPressed) {
-      rectangle.move(keyCode, 0, width);
-    }
-  }
-
-  private void makeDecision(NeuralNetwork neuralNetwork, double[] data, boolean isShowable) {
-    int leftBoundary = 0;
-    int rightBoundary = width;
-
-    var output = neuralNetwork.feedForward(data);
-    var decision = "Do Nothing";
-
-    // var firstCondition = output[0] > 0.2 && output[1] < -0.2;
-    var firstCondition = output[0] < output[1];
-    // var firstCondition = output[0] < -0.666 && output[1] > 0.666;
-    if (firstCondition && data[0] > leftBoundary + rectangle.Width / 2) {
-      rectangle.X -= rectangleSpeed;
-      decision = "Go To Left";
-    }
-
-    // var secondCondition = output[0] < -0.2 && output[1] > 0.2;
-    var secondCondition = output[0] > output[1];
-    // var secondCondition = output[0] > 0.666 && output[1] < -0.666;
-    if (secondCondition && data[0] < rightBoundary - rectangle.Width / 2) {
-      rectangle.X += rectangleSpeed;
-      decision = "Go To Right";
-    }
-
-    // Print decision
-    fill(0);
-    textSize(20);
-    textAlign(LEFT);
-    if (isShowable) text("Score: " + decision, 10, 120);
   }
 }
