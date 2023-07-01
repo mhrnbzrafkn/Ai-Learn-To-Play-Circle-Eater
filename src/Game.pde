@@ -28,8 +28,9 @@ public class Game {
     // Draw rectangle
     int rectWidth = 100;
     int rectHeight = 20;
-    int randomX = int(random(0 + rectWidth / 2, width - rectWidth / 2));
-    int rectX = randomX;
+    // int randomX = int(random(0 + rectWidth / 2, width - rectWidth / 2));
+    //int rectX = randomX;
+    int rectX = width / 2 - rectWidth / 2;
     int rectY = height - rectHeight - 10;
     rectangle = new Rectangle(rectX, rectY, rectWidth, rectHeight, rectangleSpeed);
 
@@ -127,9 +128,9 @@ public class Game {
     return score;
   }
 
-  public void display() {
+  public void display(int transparency) {
     if (score > 0) {
-      fill(0);
+      fill(0, transparency);
       rectangle.display();
       fill(255);
       textSize(20);
@@ -138,7 +139,7 @@ public class Game {
 
       for (int i = circles.size() - 1; i >= 0; i--) {
         Circle circle = circles.get(i);
-        circle.display();
+        circle.display(transparency);
       }
     }
   }
@@ -185,33 +186,35 @@ public class Game {
     fill(0, 0, 255);
     int targetCircleWidth = 10;
     int targetCircleHeight = 10;
+    
+    float threshold = 0.5;
 
     // Find circles in angle 30
-    if (abs(0.5773 - slop) < 0.05) {
+    if (abs(0.5773 - slop) < threshold) {
       // ellipse(x, y, targetCircleWidth, targetCircleHeight);
       return 30;
     }
 
     // Find circles in angle 60
-    if (abs(1.7320 - slop) < 0.1) {
+    if (abs(1.7320 - slop) < threshold) {
       // ellipse(x, y, targetCircleWidth, targetCircleHeight);
       return 60;
     }
 
     // Find circles in angle 90
-    if (abs(rectCenterX0 - convertedX) < circleRadius) {
+    if (abs(rectCenterX0 - convertedX) < rectangle.Width - circleRadius) {
       // ellipse(x, y, targetCircleWidth, targetCircleHeight);
       return 90;
     }
 
     // Find circles in angle 120
-    if (abs(-1.7320 - slop) < 0.1) {
+    if (abs(-1.7320 - slop) < threshold) {
       // ellipse(x, y, targetCircleWidth, targetCircleHeight);
       return 120;
     }
 
     // Find circles in angle 150
-    if (abs(-0.5773 - slop) < 0.05) {
+    if (abs(-0.5773 - slop) < threshold) {
       // ellipse(x, y, targetCircleWidth, targetCircleHeight);
       return 150;
     }

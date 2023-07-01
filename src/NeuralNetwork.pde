@@ -69,6 +69,83 @@ public class NeuralNetwork {
     return result;
   }
 
+  public void backpropagate(double[] input, double[] targetOutput, double learningRate) {
+    // Step 1: Perform a feedforward pass
+    double[][] activations = new double[numLayers][];
+    activations[0] = input;
+
+    double[][] weightedSums = new double[numLayers - 1][];
+
+    for (int i = 0; i < numLayers - 1; i++) {
+      weightedSums[i] = new double[layerSizes[i + 1]];
+
+      for (int j = 0; j < layerSizes[i + 1]; j++) {
+        for (int k = 0; k < layerSizes[i]; k++) {
+          weightedSums[i][j] += weights[i][j][k] * activations[i][k];
+        }
+
+        weightedSums[i][j] += biases[i][j];
+      }
+
+      activations[i + 1] = sigmoid(weightedSums[i]);
+    }
+
+    // Step 2: Calculate the output layer error
+    double[] output = activations[numLayers - 1];
+    double[] outputError = new double[layerSizes[numLayers - 1]];
+
+    for (int i = 0; i < layerSizes[numLayers - 1]; i++) {
+      double activation = output[i];
+      outputError[i] = (targetOutput[i] - activation) * activation * (1 - activation);
+    }
+
+    // Step 3: Backpropagate the error
+    double[][][] weightGradients = new double[numLayers - 1][][];
+    double[][] biasGradients = new double[numLayers - 1][];
+
+    for (int i = numLayers - 2; i >= 0; i--) {
+      weightGradients[i] = new double[layerSizes[i + 1]][layerSizes[i]];
+      biasGradients[i] = new double[layerSizes[i + 1]];
+
+      for (int j = 0; j < layerSizes[i + 1]; j++) {
+        double delta = outputError[j];
+        double activation = activations[i + 1][j];
+        double gradient = delta * activation * (1 - activation);
+
+        for (int k = 0; k < layerSizes[i]; k++) {
+          weightGradients[i][j][k] = learningRate * gradient * activations[i][k];
+        }
+
+        biasGradients[i][j] = learningRate * gradient;
+      }
+
+      double[] nextLayerError = new double[layerSizes[i]];
+
+      for (int j = 0; j < layerSizes[i]; j++) {
+        double sum = 0;
+        for (int k = 0; k < layerSizes[i + 1]; k++) {
+          sum += weights[i][k][j] * outputError[k];
+        }
+
+        double activation = activations[i][j];
+        nextLayerError[j] = sum * activation * (1 - activation);
+      }
+
+      outputError = nextLayerError;
+    }
+
+    // Step 4: Update weights and biases
+    for (int i = 0; i < numLayers - 1; i++) {
+      for (int j = 0; j < layerSizes[i + 1]; j++) {
+        for (int k = 0; k < layerSizes[i]; k++) {
+          weights[i][j][k] += weightGradients[i][j][k];
+        }
+
+        biases[i][j] += biasGradients[i][j];
+      }
+    }
+  }
+
   public void mutate(double mutationRate) {
     for (int i = 0; i < numLayers - 1; i++) {
       for (int j = 0; j < layerSizes[i + 1]; j++) {

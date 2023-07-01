@@ -18,11 +18,11 @@ class Circle {
     Y += Speed;
   }
 
-  void display() {
+  void display(int transparency) {
     if (Type == 0) {
-      fill(0, 255, 0); // Green circle
+      fill(0, 255, 0, transparency); // Green circle
     } else {
-      fill(255, 0, 0); // Red circle
+      fill(255, 0, 0, transparency); // Red circle
     }
     ellipse(X, Y, Radius, Radius);
   }
